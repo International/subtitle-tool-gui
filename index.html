@@ -155,6 +155,8 @@
                   }
                   entry.autodrain();
                 })
+              }).on('error', function(err) {
+                setStatus("error:" + err.message);
               })
             })
           })
