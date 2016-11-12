@@ -28,7 +28,7 @@ $(function() {
   function generateListEntry(result) {
     return $(`<li class="list-group-item">
       <div class="media-body">
-        <strong>${result.Title}</strong>
+        <strong>${result.Title} - ${result.Releases.join(" ")}</strong>
         <p>${result.Language}</p>
       </div>
     </li>`);
