@@ -1,23 +1,22 @@
 {
-  "name": "electron-quick-start",
+  "name": "sub-frontend",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "Subtitle downloader frontend for: https://github.com/International/subtitle-tool based on https://github.com/electron/electron-quick-start",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://github.com/International/subtitle-tool-gui",
   "keywords": [
     "Electron",
-    "quick",
-    "start",
-    "tutorial",
+    "subtitle",
     "demo"
   ],
-  "author": "GitHub",
+  "author": "George Opritescu",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^1.4.1"
+    "electron": "^1.4.1",
+    "electron-packager": "^8.2.0"
   },
   "dependencies": {
     "unzip": "git+ssh://git@github.com/EvanOxfeld/node-unzip.git"

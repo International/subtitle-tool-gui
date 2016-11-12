@@ -177,10 +177,12 @@
           }
         }
 
+        let gosubsBin = path.join(process.env.HOME, "bin/gosubs")
+
         function searchSubtitles(subtitleParams) {
           const {editor, episodeNumber, language, seasonNumber, showName} = subtitleParams;
           setStatus(`Searching for subtitles for ${showName}`)
-          exec(`gosubs -format json -name ${showName} -season ${seasonNumber} -episode ${episodeNumber} -language ${language}`, (err,stdout,stderr) => {
+          exec(`${gosubsBin} -format json -name ${showName} -season ${seasonNumber} -episode ${episodeNumber} -language ${language}`, (err,stdout,stderr) => {
             if(err) {
               alert(err)
             } else {
