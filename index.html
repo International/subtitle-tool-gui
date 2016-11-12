@@ -17,7 +17,11 @@
     <!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script> -->
 
     <script>if (window.module) module = window.module;</script>
-
+    <style>
+      .status-pre {
+        color: green;
+      }
+    </style>
   </head>
 
   <body>
@@ -39,27 +43,28 @@
             <form class="sub-searcher padded-less">
               <div class="form-group">
                 <label>Show name</label>
-                <input type="text" id="showName" class="form-control" placeholder="Name" value="umbre">
+                <input type="text" id="showName" class="form-control" placeholder="Name">
               </div>
               <div class="form-group">
                 <label>Season</label>
-                <input type="text" id="seasonNumber" class="form-control" placeholder="Season number" value="1">
+                <input type="text" id="seasonNumber" class="form-control" placeholder="Season number">
               </div>
               <div class="form-group">
                 <label>Episode</label>
-                <input type="text" id="episodeNumber" class="form-control" placeholder="Episode number" value="1">
+                <input type="text" id="episodeNumber" class="form-control" placeholder="Episode number">
               </div>
               <div class="form-group">
                 <label>Language</label>
-                <input type="text" id="language" class="form-control" placeholder="Language" value="en">
+                <input type="text" id="language" class="form-control" placeholder="Language" value="all">
               </div>
               <div class="checkbox">
                 <label>
-                  <input type="checkbox" id="download"> Download?
+                  <input type="checkbox" id="editor"> Open in editor?
                 </label>
               </div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-form btn-primary">OK</button>
+                <button type="submit" id="clear" class="btn btn-form">Clear</button>
               </div>
             </form>
 
@@ -67,67 +72,131 @@
             </ol>
           </div>
         </div>
-
-        <script>
-          $(function() {
-
-            function addSearchResults(results) {
-              let $list = $(".results")
-              $list.empty()
-              results.forEach(result => {
-                let item = $(`<li data-obj=${JSON.stringify(result)} class="list-group-item">
-                  <div class="media-body">
-                    <strong>${result.Title}</strong>
-                    <p>${result.Language}</p>
-                  </div>
-                </li>`);
-
-                $list.append(item);
-                item.dblclick(function() {
-                  let obj = JSON.parse(item.attr("data-obj"))
-                  console.log(obj)
-                })
-              })
-            }
-
-            function getSearchParams() {
-              let showName = $("#showName").val()
-              let seasonNumber = $("#seasonNumber").val()
-              let episodeNumber = $("#episodeNumber").val()
-              let language = $("#language").val()
-              let download = $("#download").is(":checked")
-              return {
-                showName: showName, seasonNumber: seasonNumber,
-                language: language, episodeNumber: episodeNumber,
-                download: download
-              }
-            }
-
-            function searchSubtitles(subtitleParams) {
-              const {download, episodeNumber, language, seasonNumber, showName} = subtitleParams;
-              const exec = require('child_process').exec;
-              exec(`gosubs -format json -name ${showName} -season ${seasonNumber} -episode ${episodeNumber} -language ${language}`, (err,stdout,stderr) => {
-                if(err) {
-                  alert(err)
-                  console.log(err)
-                } else {
-                  let subtitles = JSON.parse(stdout)
-                  addSearchResults(subtitles);
-                }
-              })
-            }
-
-            $(".sub-searcher").submit(function(e) {
-              e.preventDefault()
-              let params = getSearchParams()
-              searchSubtitles(params)
-            })
-          })
-        </script>
-
-
       </div>
 
+      <footer class="toolbar toolbar-footer">
+        <div class="toolbar-actions">
+          <span class="status-pre">Status:</span><span class="status"></span>
+        </div>
+      </footer>
     </div>
+
+
+    <script>
+      $(function() {
+
+        const fs = require("fs");
+        const unzip = require("unzip");
+        const http = require("http");
+        const path = require("path");
+        const exec = require('child_process').exec;
+
+        let acceptableExtensions = [".srt"];
+        let extractTo = process.env.HOME;
+        let defaultEditor = "subl";
+
+        $("#clear").click(function(e) {
+          e.preventDefault();
+          $("#showName").val("")
+          $("#seasonNumber").val("")
+          $("#episodeNumber").val("")
+          $("#language").val("")
+          $("#editor").is(":checked")
+          $(".results").empty()
+        })
+
+        function openInEditor() {
+          return $("#editor").is(":checked")
+        }
+
+        function addSearchResults(results) {
+          let $list = $(".results")
+          $list.empty()
+          results.forEach(result => {
+            let item = $(`<li class="list-group-item">
+              <div class="media-body">
+                <strong>${result.Title}</strong>
+                <p>${result.Language}</p>
+              </div>
+            </li>`);
+
+            item.attr("data-obj", JSON.stringify(result))
+
+            $list.append(item);
+
+            item.dblclick(function() {
+              let obj = JSON.parse(item.attr("data-obj"))
+              let url = obj.URL;
+              setStatus(`requesting ${url}`)
+              http.get(url, (response) => {
+                response.pipe(unzip.Parse()).on('entry', (entry) => {
+                  let fileName = entry.path;
+                  let type = entry.type; // 'Directory' or 'File'
+                  let size = entry.size;
+                  let interestingExtension =
+                    acceptableExtensions.filter(ext => fileName.toLowerCase().endsWith(ext))
+
+                  if(interestingExtension.length > 0) {
+                    let outputDestination = path.join(extractTo, fileName)
+                    setStatus(`Extracting to ${outputDestination}`)
+                    entry.pipe(fs.createWriteStream(outputDestination))
+                      .on("finish", () => {
+                        setStatus("Done");
+                        if(openInEditor()) {
+                          let openString = `${defaultEditor} "${outputDestination}"`;
+                          setStatus(`Opening editor ${defaultEditor}`)
+                          exec(openString,(err, std, stderr) => {
+                            if(err) {
+                              throw err;
+                            }
+                          })
+                        }
+                      });
+                  }
+                  entry.autodrain();
+                })
+              })
+            })
+          })
+        }
+
+        function setStatus(text) {
+          $(".status").text(text)
+        }
+
+        function getSearchParams() {
+          let showName = $("#showName").val()
+          let seasonNumber = $("#seasonNumber").val()
+          let episodeNumber = $("#episodeNumber").val()
+          let language = $("#language").val()
+          let editor = $("#editor").is(":checked")
+          return {
+            showName: showName, seasonNumber: seasonNumber,
+            language: language, episodeNumber: episodeNumber,
+            editor: editor
+          }
+        }
+
+        function searchSubtitles(subtitleParams) {
+          const {editor, episodeNumber, language, seasonNumber, showName} = subtitleParams;
+          setStatus(`Searching for subtitles for ${showName}`)
+          exec(`gosubs -format json -name ${showName} -season ${seasonNumber} -episode ${episodeNumber} -language ${language}`, (err,stdout,stderr) => {
+            if(err) {
+              alert(err)
+            } else {
+              let subtitles = JSON.parse(stdout)
+              setStatus("Populating subtitles")
+              addSearchResults(subtitles);
+            }
+          })
+        }
+
+        $(".sub-searcher").submit(function(e) {
+          e.preventDefault()
+          let params = getSearchParams()
+          searchSubtitles(params)
+        })
+      })
+    </script>
   </body>
 </html>
