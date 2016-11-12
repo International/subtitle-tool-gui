@@ -109,10 +109,10 @@ $(function() {
     const {editor, episodeNumber, language, seasonNumber, showName} = subtitleParams;
     let execCommand = `${gosubsBin} -format json -name "${showName}" -language ${language} `
     if(seasonNumber !== "") {
-      execCommand += `-season ${seasonNumber}`
+      execCommand += `-season ${seasonNumber} `
     }
     if(episodeNumber !== "") {
-      execCommand += `-episode ${episodeNumber}`
+      execCommand += `-episode ${episodeNumber} `
     }
     setStatus(`Searching for subtitles for ${showName}`)
     exec(execCommand, (err,stdout,stderr) => {
