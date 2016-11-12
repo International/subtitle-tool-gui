@@ -92,7 +92,7 @@
         const exec = require('child_process').exec;
 
         let acceptableExtensions = [".srt"];
-        let extractTo = process.env.HOME;
+        let extractTo = path.join(process.env.HOME, "Desktop");
         let defaultEditor = "/usr/local/bin/subl";
 
         $("#clear").click(function(e) {
