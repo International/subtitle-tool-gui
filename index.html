@@ -47,11 +47,11 @@
               </div>
               <div class="form-group">
                 <label>Season</label>
-                <input type="text" id="seasonNumber" class="form-control" placeholder="Season number">
+                <input type="number" id="seasonNumber" class="form-control" placeholder="Season number">
               </div>
               <div class="form-group">
                 <label>Episode</label>
-                <input type="text" id="episodeNumber" class="form-control" placeholder="Episode number">
+                <input type="number" id="episodeNumber" class="form-control" placeholder="Episode number">
               </div>
               <div class="form-group">
                 <label>Language</label>
@@ -93,7 +93,7 @@
 
         let acceptableExtensions = [".srt"];
         let extractTo = process.env.HOME;
-        let defaultEditor = "subl";
+        let defaultEditor = "/usr/local/bin/subl";
 
         $("#clear").click(function(e) {
           e.preventDefault();
