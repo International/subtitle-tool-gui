@@ -19,6 +19,7 @@
     "electron-packager": "^8.2.0"
   },
   "dependencies": {
+    "bluebird": "^3.4.6",
     "unzip": "git+ssh://git@github.com/EvanOxfeld/node-unzip.git"
   }
 }
