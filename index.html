@@ -183,8 +183,15 @@
 
         function searchSubtitles(subtitleParams) {
           const {editor, episodeNumber, language, seasonNumber, showName} = subtitleParams;
+          let execCommand = `${gosubsBin} -format json -name "${showName}" -language ${language} `
+          if(seasonNumber !== "") {
+            execCommand += `-season ${seasonNumber}`
+          }
+          if(episodeNumber !== "") {
+            execCommand += `-episode ${episodeNumber}`
+          }
           setStatus(`Searching for subtitles for ${showName}`)
-          exec(`${gosubsBin} -format json -name ${showName} -season ${seasonNumber} -episode ${episodeNumber} -language ${language}`, (err,stdout,stderr) => {
+          exec(execCommand, (err,stdout,stderr) => {
             if(err) {
               alert(err)
             } else {
