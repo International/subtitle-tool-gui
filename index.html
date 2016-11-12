@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- <title>Photon</title> -->
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="./photon/photon-0.1.2-dist/css/photon.css">
+    <!-- <link rel="stylesheet" href="./hopscotch.min.css"> -->
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+
+    <!-- Electron Javascript -->
+    <script src="renderer.js" charset="utf-8"></script>
+    <script src="./assets/js/jquery-3.1.1.min.js" charset="utf-8"></script>
+    <!-- <script src="./hopscotch.min.js" charset="utf-8"></script> -->
+
+    <!-- <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/styles/default.min.css"> -->
+    <!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script> -->
+
+    <script>if (window.module) module = window.module;</script>
+
+  </head>
+
+  <body>
+    <!-- Wrap your entire app inside .window -->
+    <div class="window">
+      <!-- Your app's content goes inside .window-content -->
+      <div class="window-content">
+        <!-- <div class="padded-more">
+          <h1>Welcome to Photon</h1>
+          <p>
+            Thanks for downloading Photon. This is an example HTML page that's linked up to compiled Photon CSS, has the proper meta tags
+            and the HTML structure.
+          </p>
+        </div> -->
+
+        <div class="pane-group">
+          <div class="pane">
+
+            <form class="sub-searcher padded-less">
+              <div class="form-group">
+                <label>Show name</label>
+                <input type="text" id="showName" class="form-control" placeholder="Name" value="umbre">
+              </div>
+              <div class="form-group">
+                <label>Season</label>
+                <input type="text" id="seasonNumber" class="form-control" placeholder="Season number" value="1">
+              </div>
+              <div class="form-group">
+                <label>Episode</label>
+                <input type="text" id="episodeNumber" class="form-control" placeholder="Episode number" value="1">
+              </div>
+              <div class="form-group">
+                <label>Language</label>
+                <input type="text" id="language" class="form-control" placeholder="Language" value="en">
+              </div>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" id="download"> Download?
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-form btn-primary">OK</button>
+              </div>
+            </form>
+
+            <ol class="results list-group">
+            </ol>
+          </div>
+        </div>
+
+        <script>
+          $(function() {
+
+            function addSearchResults(results) {
+              let $list = $(".results")
+              $list.empty()
+              results.forEach(result => {
+                let item = $(`<li data-obj=${JSON.stringify(result)} class="list-group-item">
+                  <div class="media-body">
+                    <strong>${result.Title}</strong>
+                    <p>${result.Language}</p>
+                  </div>
+                </li>`);
+
+                $list.append(item);
+                item.dblclick(function() {
+                  let obj = JSON.parse(item.attr("data-obj"))
+                  console.log(obj)
+                })
+              })
+            }
+
+            function getSearchParams() {
+              let showName = $("#showName").val()
+              let seasonNumber = $("#seasonNumber").val()
+              let episodeNumber = $("#episodeNumber").val()
+              let language = $("#language").val()
+              let download = $("#download").is(":checked")
+              return {
+                showName: showName, seasonNumber: seasonNumber,
+                language: language, episodeNumber: episodeNumber,
+                download: download
+              }
+            }
+
+            function searchSubtitles(subtitleParams) {
+              const {download, episodeNumber, language, seasonNumber, showName} = subtitleParams;
+              const exec = require('child_process').exec;
+              exec(`gosubs -format json -name ${showName} -season ${seasonNumber} -episode ${episodeNumber} -language ${language}`, (err,stdout,stderr) => {
+                if(err) {
+                  alert(err)
+                  console.log(err)
+                } else {
+                  let subtitles = JSON.parse(stdout)
+                  addSearchResults(subtitles);
+                }
+              })
+            }
+
+            $(".sub-searcher").submit(function(e) {
+              e.preventDefault()
+              let params = getSearchParams()
+              searchSubtitles(params)
+            })
+          })
+        </script>
+
+
+      </div>
+
+    </div>
+  </body>
+</html>
