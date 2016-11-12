@@ -25,16 +25,20 @@ $(function() {
     return $("#editor").is(":checked")
   }
 
+  function generateListEntry(result) {
+    return $(`<li class="list-group-item">
+      <div class="media-body">
+        <strong>${result.Title}</strong>
+        <p>${result.Language}</p>
+      </div>
+    </li>`);
+  }
+
   function addSearchResults(results) {
     let $list = $(".results")
     $list.empty()
     results.forEach(result => {
-      let item = $(`<li class="list-group-item">
-        <div class="media-body">
-          <strong>${result.Title}</strong>
-          <p>${result.Language}</p>
-        </div>
-      </li>`);
+      let item = generateListEntry(result);
 
       item.attr("data-obj", JSON.stringify(result))
 
@@ -46,36 +50,40 @@ $(function() {
         setStatus(`requesting ${url}`)
         http.get(url, (response) => {
           response.pipe(unzip.Parse()).on('entry', (entry) => {
-            let fileName = entry.path;
-            let type = entry.type; // 'Directory' or 'File'
-            let size = entry.size;
-            let interestingExtension =
-              acceptableExtensions.filter(ext => fileName.toLowerCase().endsWith(ext))
-
-            if(interestingExtension.length > 0) {
-              let outputDestination = path.join(extractTo, fileName)
-              setStatus(`Extracting to ${outputDestination}`)
-              entry.pipe(fs.createWriteStream(outputDestination))
-                .on("finish", () => {
-                  setStatus("Done");
-                  if(openInEditor()) {
-                    let openString = `${defaultEditor} "${outputDestination}"`;
-                    setStatus(`Opening editor ${defaultEditor}`)
-                    exec(openString,(err, std, stderr) => {
-                      if(err) {
-                        throw err;
-                      }
-                    })
-                  }
-                });
-            }
-            entry.autodrain();
+            handleZipEntry(entry)
           })
         }).on('error', function(err) {
           setStatus("error:" + err.message);
         })
       })
     })
+  }
+
+  function handleZipEntry(entry) {
+    let fileName = entry.path;
+    let type = entry.type; // 'Directory' or 'File'
+    let size = entry.size;
+    let interestingExtension =
+      acceptableExtensions.filter(ext => fileName.toLowerCase().endsWith(ext))
+
+    if(interestingExtension.length > 0) {
+      let outputDestination = path.join(extractTo, fileName)
+      setStatus(`Extracting to ${outputDestination}`)
+      entry.pipe(fs.createWriteStream(outputDestination))
+        .on("finish", () => {
+          setStatus("Done");
+          if(openInEditor()) {
+            let openString = `${defaultEditor} "${outputDestination}"`;
+            setStatus(`Opening editor ${defaultEditor}`)
+            exec(openString,(err, std, stderr) => {
+              if(err) {
+                throw err;
+              }
+            })
+          }
+        });
+    }
+    entry.autodrain();
   }
 
   function setStatus(text) {
