@@ -1,3 +1,4 @@
+// @flow
 $(function() {
 
   require("babel-polyfill");
@@ -39,11 +40,12 @@ $(function() {
 
   function performRequest(url) {
     let p = new Promise((resolve, reject) => {
-      http.get(url, (response) => {
+      let req = http.get(url, (response) => {
         resolve(response);
       }).on('error', (err) => {
         reject(err);
       })
+      req.setTimeout(5000, () => { p.reject(new Error("timeout")) })
     })
     return p;
   }
