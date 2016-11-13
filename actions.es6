@@ -11,9 +11,13 @@ $(function() {
 
   const exec = require('child_process').exec;
 
-  let acceptableExtensions = [".srt"];
+  let acceptableExtensions = [".srt", ".txt"];
   let extractTo = path.join(process.env.HOME, "Desktop");
   let defaultEditor = "/usr/local/bin/subl";
+
+  function log(msg) {
+    console.log(msg);
+  }
 
   $("#clear").click(function(e) {
     e.preventDefault();
@@ -41,11 +45,14 @@ $(function() {
   function performRequest(url) {
     let p = new Promise((resolve, reject) => {
       let req = http.get(url, (response) => {
+        log("resolving response")
         resolve(response);
       }).on('error', (err) => {
+        log("rejecting")
+        log(err)
         reject(err);
       })
-      req.setTimeout(5000, () => { p.reject(new Error("timeout")) })
+      req.setTimeout(5000, () => { log("timing out");p.reject(new Error("timeout")) })
     })
     return p;
   }
@@ -79,11 +86,14 @@ $(function() {
 
   function handleZipEntry(entry) {
     let fileName = entry.path;
+    log("handleZipEntry with:" + fileName)
+
     let type = entry.type; // 'Directory' or 'File'
     let size = entry.size;
     let interestingExtension =
       acceptableExtensions.filter(ext => fileName.toLowerCase().endsWith(ext))
 
+    log("interestingExtension:" + interestingExtension.length)
     if(interestingExtension.length > 0) {
       let outputDestination = path.join(extractTo, fileName)
       setStatus(`Extracting to ${outputDestination}`)
@@ -106,7 +116,7 @@ $(function() {
   }
 
   function setStatus(text) {
-    console.log(text)
+    log(text)
     $(".status").text(text)
   }
 
