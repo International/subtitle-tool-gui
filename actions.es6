@@ -37,6 +37,17 @@ $(function() {
     </li>`);
   }
 
+  function performRequest(url) {
+    let p = new Promise((resolve, reject) => {
+      http.get(url, (response) => {
+        resolve(response);
+      }).on('error', (err) => {
+        reject(err);
+      })
+    })
+    return p;
+  }
+
   async function addSearchResults(results) {
     let $list = $(".results")
     $list.empty()
@@ -52,13 +63,14 @@ $(function() {
         let url = obj.URL;
         setStatus(`requesting ${url}`)
 
-        http.get(url, function(response) {
+        try {
+          let response = await performRequest(url)
           response.pipe(unzip.Parse()).on('entry', (entry) => {
-            handleZipEntry(entry)
+              handleZipEntry(entry)
           })
-        }).on('error', (err) => {
+        } catch(err) {
           setStatus("error:" + err.message)
-        })
+        }
       })
     })
   }
