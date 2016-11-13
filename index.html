@@ -40,6 +40,14 @@
         <div class="pane-group">
           <div class="pane">
 
+            <div class="debug_container">
+              <h1>Debug Info</h1>
+              <div class="debug">
+              </div>
+              <hr/>
+            </div>
+
+
             <form class="sub-searcher padded-less">
               <div class="form-group">
                 <label>Show name</label>
@@ -81,7 +89,10 @@
       </footer>
     </div>
 
-
-    <script src="actions.js" charset="utf-8"></script>
+    <script>
+      $(function() {
+        require("./actions")($);
+      })
+    </script>
   </body>
 </html>

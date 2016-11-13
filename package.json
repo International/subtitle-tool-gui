@@ -16,6 +16,7 @@
   "license": "CC0-1.0",
   "devDependencies": {
     "babel-plugin-transform-async-to-generator": "^6.16.0",
+    "babel-plugin-transform-flow-strip-types": "^6.18.0",
     "electron": "^1.4.1",
     "electron-packager": "^8.2.0",
     "flow-bin": "^0.35.0",

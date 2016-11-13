@@ -1,0 +1,7 @@
+[ignore]
+
+[include]
+actions.es6
+[libs]
+
+[options]
