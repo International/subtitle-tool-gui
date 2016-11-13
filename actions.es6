@@ -6,9 +6,9 @@ $(function() {
   const unzip = require("unzip");
   const Promise = require("bluebird");
   const path = require("path");
+  const http = require("http");
+
   const exec = require('child_process').exec;
-  const request = require("request-promise");
-  const intoStream = require("into-stream");
 
   let acceptableExtensions = [".srt"];
   let extractTo = path.join(process.env.HOME, "Desktop");
@@ -51,20 +51,14 @@ $(function() {
         let obj = JSON.parse(item.attr("data-obj"))
         let url = obj.URL;
         setStatus(`requesting ${url}`)
-        try {
-          const http = require("http");
-          http.get(url, function(response) {
-            response.pipe(unzip.Parse()).on('entry', (entry) => {
-              handleZipEntry(entry)
-            })
+
+        http.get(url, function(response) {
+          response.pipe(unzip.Parse()).on('entry', (entry) => {
+            handleZipEntry(entry)
           })
-          // let response = await request.get({url:url, timeout: 5000})
-          // intoStream(response).pipe(unzip.Parse()).on('entry', (entry) => {
-          //   handleZipEntry(entry)
-          // })
-        } catch(err) {
-          setStatus("error:" + err.message);
-        }
+        }).on('error', (err) => {
+          setStatus("error:" + err.message)
+        })
       })
     })
   }
