@@ -1,11 +1,14 @@
 $(function() {
 
+  require("babel-polyfill");
+
   const fs = require("fs");
   const unzip = require("unzip");
   const Promise = require("bluebird");
-  const http = require("http");
   const path = require("path");
   const exec = require('child_process').exec;
+  const request = require("request-promise");
+  const intoStream = require("into-stream");
 
   let acceptableExtensions = [".srt"];
   let extractTo = path.join(process.env.HOME, "Desktop");
@@ -34,7 +37,7 @@ $(function() {
     </li>`);
   }
 
-  function addSearchResults(results) {
+  async function addSearchResults(results) {
     let $list = $(".results")
     $list.empty()
     results.forEach(result => {
@@ -44,17 +47,24 @@ $(function() {
 
       $list.append(item);
 
-      item.dblclick(function() {
+      item.dblclick(async function() {
         let obj = JSON.parse(item.attr("data-obj"))
         let url = obj.URL;
         setStatus(`requesting ${url}`)
-        http.get(url, (response) => {
-          response.pipe(unzip.Parse()).on('entry', (entry) => {
-            handleZipEntry(entry)
+        try {
+          const http = require("http");
+          http.get(url, function(response) {
+            response.pipe(unzip.Parse()).on('entry', (entry) => {
+              handleZipEntry(entry)
+            })
           })
-        }).on('error', function(err) {
+          // let response = await request.get({url:url, timeout: 5000})
+          // intoStream(response).pipe(unzip.Parse()).on('entry', (entry) => {
+          //   handleZipEntry(entry)
+          // })
+        } catch(err) {
           setStatus("error:" + err.message);
-        })
+        }
       })
     })
   }
@@ -69,17 +79,18 @@ $(function() {
     if(interestingExtension.length > 0) {
       let outputDestination = path.join(extractTo, fileName)
       setStatus(`Extracting to ${outputDestination}`)
+
       entry.pipe(fs.createWriteStream(outputDestination))
-        .on("finish", () => {
-          setStatus("Done");
+        .on("finish", async () => {
           if(openInEditor()) {
             let openString = `${defaultEditor} "${outputDestination}"`;
             setStatus(`Opening editor ${defaultEditor}`)
-            exec(openString,(err, std, stderr) => {
-              if(err) {
-                throw err;
-              }
-            })
+            try {
+              await execProcess(openString)
+              setStatus("Done")
+            } catch(err) {
+              setStatus(`Error: ${err.message}`)
+            }
           }
         });
     }
@@ -87,6 +98,7 @@ $(function() {
   }
 
   function setStatus(text) {
+    console.log(text)
     $(".status").text(text)
   }
 
@@ -105,7 +117,20 @@ $(function() {
 
   let gosubsBin = path.join(process.env.HOME, "bin/gosubs")
 
-  function searchSubtitles(subtitleParams) {
+  function execProcess(command) {
+    let p = new Promise((resolve,reject) => {
+      exec(command, (err, stdout, stderr) => {
+        if(err) {
+          reject(err)
+        } else {
+          return resolve({stdout:stdout,stderr:stderr})
+        }
+      })
+    })
+    return p
+  }
+
+  async function searchSubtitles(subtitleParams) {
     const {editor, episodeNumber, language, seasonNumber, showName} = subtitleParams;
     let execCommand = `${gosubsBin} -format json -name "${showName}" -language ${language} `
     if(seasonNumber !== "") {
@@ -114,21 +139,24 @@ $(function() {
     if(episodeNumber !== "") {
       execCommand += `-episode ${episodeNumber} `
     }
+
     setStatus(`Searching for subtitles for ${showName}`)
-    exec(execCommand, (err,stdout,stderr) => {
-      if(err) {
-        alert(err)
-      } else {
-        let subtitles = JSON.parse(stdout)
-        setStatus("Populating subtitles")
-        addSearchResults(subtitles);
-      }
-    })
+
+    try {
+      let res = await execProcess(execCommand)
+      let {stdout, stderr} = res;
+      let subtitles = JSON.parse(stdout)
+      setStatus("Populating subtitles")
+      await addSearchResults(subtitles);
+    } catch(err) {
+      setStatus(`Error:${err.message}`)
+    }
+
   }
 
-  $(".sub-searcher").submit(function(e) {
+  $(".sub-searcher").submit(async function(e) {
     e.preventDefault()
     let params = getSearchParams()
-    searchSubtitles(params)
+    await searchSubtitles(params)
   })
 })
